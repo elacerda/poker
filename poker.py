@@ -11,6 +11,10 @@ class poker(object):
     def __init__(self):
         self._create_cards()
         self.shuffle()
+        self.ncards = 52
+        self.ncards_players = 2
+        self.ncards_flop = 3
+
     def _create_cards(self):
         _SUITS = 'cdhs'
         _RANKS = '23456789TJQKA'
@@ -18,21 +22,21 @@ class poker(object):
 
     def shuffle(self):
         random.seed()
-        return random.sample(self._deck, 52)
+        return random.sample(self._deck, self.ncards)
 
     def hand(self, players, deck):
         print 'Hand for %d players' % players
         hands = []
         for p_i in range(players):
             print '\nPlayer: %d' % (p_i+1)
-            hand = [deck.pop() for n in range(2)]
+            hand = [deck.pop() for n in range(self.ncards_players)]
             print hand
             hands.append(hand)
         return hands, deck
-    
+
     def flop(self, deck):
         print '\nFLOP\n'
-        flop = [deck.pop() for n in range(3)]
+        flop = [deck.pop() for n in range(self.ncards_flop)]
         print flop
         return flop, deck
 
@@ -48,19 +52,47 @@ class poker(object):
         print river
         return river, deck
 
-    def round(self, players=9):
+    def round_example(self, players=9):
         deck = self.shuffle()
-        players_hand, deck = self.hand(players, deck)
+        hands, deck = self.hand(players, deck)
         flop, deck = self.flop(deck)
         turn, deck = self.turn(deck)
         river, deck = self.river(deck)
+        '''
+            Here do stuff with:
+            HANDS, FLOP, TURN, RIVER and the rest of the DECK
+            Ex: create a winner decision method:
+            self.winner_hand(hands, flop, turn, river)
+        '''
 
 
-def codds(odds, call, pote):
-    pote_final = pote + call
-    ratio = 1. * call/pote_final
+class player(object):
+    '''
+        Starting to create an usable player class to play poker.
+    '''
+    def __init__(self, name='noname', chips=10000):
+        self._name = name
+        self._chips = chips
+        self._hand = None
+
+    def set_hand(self, hand):
+        self._hand = hand
+
+    def get_hand(self):
+        return self._hand
+
+    def get_chips(self):
+        return self._chips
+
+
+def codds(odds, call, pot):
+    '''
+        should I call or fold by odds ?
+    '''
+    final_pot = pot + call
+    ratio = 1. * call/final_pot
     odds_ratio = 0.01 * (odds * 4. + 2.)
-    if odds_ratio > ratio: 
+    if odds_ratio > ratio:
         print 'CALL!'
     else:
         print 'FOLD!'
