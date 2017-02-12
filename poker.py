@@ -7,82 +7,111 @@ import sys
 import random
 import itertools
 
-class poker(object):
+class Player(object):
+    '''
+        Starting to create an usable player class to play poker.
+    '''
+    def __init__(self, name='noname', chips=10000):
+        self.name = name
+        self.pos = None
+        self.chips = chips
+        self.hand = None
+
+    def purge_chips(self, nchips):
+        self.chips -= nchips
+
+    def add_chips(self, nchips):
+        self.chips += nchips
+
+
+class PokerTable(object):
     def __init__(self):
-        self._create_cards()
-        self.shuffle()
         self.ncards = 52
         self.ncards_players = 2
         self.ncards_flop = 3
+        self.hand_counter = 0
+        self.players = []
+        self.nplayers = 0
+        self._create_cards()
 
     def _create_cards(self):
-        _SUITS = 'cdhs'
-        _RANKS = '23456789TJQKA'
-        self._deck = tuple(''.join(card) for card in itertools.product(_RANKS, _SUITS))
+        _suits = 'cdhs'
+        _ranks = '23456789TJQKA'
+        self._deck = tuple(''.join(card) for card in itertools.product(_ranks, _suits))
 
     def shuffle(self):
         random.seed()
         return random.sample(self._deck, self.ncards)
 
-    def hand(self, players, deck):
-        print 'Hand for %d players' % players
-        hands = []
-        for p_i in range(players):
-            print '\nPlayer: %d' % (p_i+1)
+    def deal_players_hands(self, deck=None):
+        if deck is None:
+            deck = self.shuffle()
+        for i, p in enumerate(self.players):
             hand = [deck.pop() for n in range(self.ncards_players)]
-            print hand
-            hands.append(hand)
-        return hands, deck
+            p.hand = hand
+        return deck
 
     def flop(self, deck):
-        print '\nFLOP\n'
         flop = [deck.pop() for n in range(self.ncards_flop)]
-        print flop
         return flop, deck
 
     def turn(self, deck):
-        print '\nTURN\n'
-        turn = deck.pop()
-        print turn
+        turn = [deck.pop()]
         return turn, deck
 
     def river(self, deck):
-        print '\nRIVER\n'
-        river = deck.pop()
-        print river
+        river = [deck.pop()]
         return river, deck
 
-    def round_example(self, players=9):
-        deck = self.shuffle()
-        hands, deck = self.hand(players, deck)
-        flop, deck = self.flop(deck)
-        turn, deck = self.turn(deck)
-        river, deck = self.river(deck)
-        '''
-            Here do stuff with:
-            HANDS, FLOP, TURN, RIVER and the rest of the DECK
-            Ex: create a winner decision method:
-            self.winner_hand(hands, flop, turn, river)
-        '''
+    def add_player(self, name, chips, pos, player_instance=None):
+        if player_instance is not None:
+            p = player_instance
+        else:
+            p = Player(name, chips)
+        p.pos = pos
+        self.players.append(p)
 
+    def _add_example_players(self, nplayers):
+        for i in range(nplayers):
+            name = 'Player %d' % (i+1)
+            chips = 1500
+            self.add_player(name=name, chips=chips, pos=i)
+        self.nplayers = len(self.players)
 
-class player(object):
-    '''
-        Starting to create an usable player class to play poker.
-    '''
-    def __init__(self, name='noname', chips=10000):
-        self._name = name
-        self._chips = chips
-        self._hand = None
+    def remove_players(self):
+        del self.players
+        self.players = []
+        self.nplayers = 0
 
-    def set_hand(self, hand):
-        self._hand = hand
-
-    def get_hand(self):
-        return self._hand
-
-    def get_chips(self):
-        return self._chips
+    def round_example(self, nhands=10, nplayers=9):
+        if nplayers > 10:
+            nplayers = 10
+        if self.nplayers == 0:
+            self._add_example_players(nplayers)
+        hand_counter = 0
+        for n in range(nhands):
+            print 'Poker hand #%d (table hand #%d)' % (hand_counter, self.hand_counter)
+            print 'Hand for %d players' % self.nplayers
+            deck = self.deal_players_hands()
+            for i, p in enumerate(self.players):
+                print '%s received: %s' % (p.name, p.hand)
+            flop, deck = self.flop(deck)
+            turn, deck = self.turn(deck)
+            river, deck = self.river(deck)
+            print 'Flop: %s' % flop
+            print 'Turn: %s' % turn
+            print 'River: %s' % river
+            print '##########'
+            print 'out deck - %d cards: %s' % (len(deck), deck)
+            '''
+                Here do stuff with:
+                PLAYERS_CARDS, FLOP, TURN, RIVER and the rest of the DECK
+                Ex: create a winner decision method:
+                self.winner_hand(players_cards, flop, turn, river)
+            '''
+            hand_counter += 1
+            self.hand_counter += 1
+        self.remove_players()
 
 
 def codds(odds, call, pot):
@@ -97,13 +126,19 @@ def codds(odds, call, pot):
     else:
         print 'FOLD!'
 
+
 def main(argv):
     try:
-        players = int(argv[1])
+        nhands = int(argv[1])
     except IndexError:
-        players = 2
-    P = poker()
-    P.round(players=players)
+        nhands = 1
+    try:
+        nplayers = int(argv[2])
+    except IndexError:
+        nplayers = 2
+    Table = PokerTable()
+    Table.round_example(nhands, nplayers)
+
 
 if __name__ == '__main__':
     main(sys.argv)
