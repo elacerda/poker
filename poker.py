@@ -7,9 +7,14 @@ import sys
 import random
 import itertools
 
+
+_suits = 'cdhs'
+_ranks = '23456789TJQKA'
+
+
 class Player(object):
     '''
-        Starting to create an usable player class to play poker.
+        An usable player class to play poker.
     '''
     def __init__(self, name='noname', chips=10000):
         self.name = name
@@ -25,19 +30,15 @@ class Player(object):
 
 
 class PokerTable(object):
-    def __init__(self):
+    _deck = tuple(''.join(card) for card in itertools.product(_ranks, _suits))
+
+    def __init__(self, deck=None):
         self.ncards = 52
         self.ncards_players = 2
         self.ncards_flop = 3
         self.hand_counter = 0
         self.players = []
         self.nplayers = 0
-        self._create_cards()
-
-    def _create_cards(self):
-        _suits = 'cdhs'
-        _ranks = '23456789TJQKA'
-        self._deck = tuple(''.join(card) for card in itertools.product(_ranks, _suits))
 
     def shuffle(self):
         random.seed()
@@ -46,6 +47,7 @@ class PokerTable(object):
     def deal_players_hands(self, deck=None):
         if deck is None:
             deck = self.shuffle()
+        # XXX TODO: 1 card per time
         for i, p in enumerate(self.players):
             hand = [deck.pop() for n in range(self.ncards_players)]
             p.hand = hand
@@ -105,26 +107,31 @@ class PokerTable(object):
             print 'out deck - %d cards: %s' % (len(deck), deck)
             '''
                 Here do stuff with:
-                PLAYERS_CARDS, FLOP, TURN, RIVER and the rest of the DECK
+                FLOP, TURN, RIVER and the rest of the DECK
                 Ex: create a winner decision method:
-                self.winner_hand(players_cards, flop, turn, river)
+                self.winner_after(flop, turn, river)
             '''
             hand_counter += 1
             self.hand_counter += 1
         self.remove_players()
 
 
-def codds(odds, call, pot):
-    '''
-        should I call or fold by odds ?
-    '''
-    final_pot = pot + call
-    ratio = 1. * call/final_pot
-    odds_ratio = 0.01 * (odds * 4. + 2.)
-    if odds_ratio > ratio:
-        print 'CALL!'
+def codds(outs, to_river=False):
+    odds = outs * 2.
+    if to_river:
+        odds *= 2
+    odds_frac = odds/100.
+    return odds_frac/(1 - odds_frac)
+
+
+def payornot(outs, pot, bet=None, to_river=False):
+    card_odds = codds(outs, to_river)
+    pot_odds = 1. * bet/(bet+pot)
+    print 'Card ODDS: ', card_odds, ' - Pot ODDS: ', pot_odds
+    if card_odds > pot_odds:
+        print 'call or raise'
     else:
-        print 'FOLD!'
+        print 'fold'
 
 
 def main(argv):
